@@ -1,15 +1,18 @@
 var express = require('express'),
     bodyParser = require('body-parser'),
+    multiParty = require('connect-multiparty'),
     mongodb = require('mongodb'),
-    objectId = require('mongodb').ObjectId;
+    objectId = require('mongodb').ObjectId,
+    fs = require('fs');
 
 var app = express();
 
-// body-parser
+// Middlewares
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
+app.use(multiParty());
 
-var port = 8080;
+var port = 3000;
 
 app.listen(port);
 
@@ -31,25 +34,47 @@ app.get('/', function(req, res){
  * Cadastra informações no banco de dados
  */
 app.post('/api' , function(req, res){
-    var dados = req.body;
+    
+    // Seta o header para receber requisições de outros domínios
+    res.setHeader('Access-Control-Allow-Origin', '*');
 
-    if(dados.titulo != undefined && dados.url_imagem != undefined){
-        db.open(function(err, mongoClient){
-            mongoClient.collection('postagens', function(err, collection){
-                collection.insert(dados, function(err, records){
-                    if(err){
-                        res.status(500).json(err);
-                    } else {
-                        res.status(200).json(records);
-                    }
-                    mongoClient.close();
+    var date = new Date();
+    var timeStamp = date.getTime();
+
+    var url_imagem  = timeStamp + '_' + req.files.arquivo.originalFilename;
+    var path_origem = req.files.arquivo.path;
+    var path_destino = './uploads/' + url_imagem;
+
+    // Faz o upload do arquivo no servidor
+    fs.rename(path_origem, path_destino, function(err){
+        if(err){
+            res.status(500).json({error: err});
+            return;
+        } 
+        var dados = {
+            url_imagem : url_imagem,
+            titulo: req.body.titulo
+        };
+
+        if(dados.titulo != undefined && dados.url_imagem != undefined){
+            db.open(function(err, mongoClient){
+                mongoClient.collection('postagens', function(err, collection){
+                    collection.insert(dados, function(err, records){
+                        if(err){
+                            res.status(500).json({status: 'Ops, houve um erro no servidor!'});
+                        } else {
+                            res.status(200).json({status: 'Inclusão realizada com sucesso!'});
+                        }
+                        mongoClient.close();
+                    });
                 });
             });
-        });
-    } else {
-        res.status(400).json({msg: 'Dados inválidos para requisição'});        
-    }
-    
+        } else {
+            res.status(400).json({msg: 'Dados inválidos para requisição'});        
+        }
+
+    });
+
     // res.send(dados);
 });
 
