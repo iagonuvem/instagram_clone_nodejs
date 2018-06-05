@@ -16,7 +16,38 @@
 
 		<script>
 			$(document).ready(function(){
+				function carregaPosts(){
+					// Criar XMLHttpRequest
+					var xhr = new XMLHttpRequest();
+					
+					// Verifica o estado
+					xhr.onload = function(){
+						if(xhr.status === 200){
+							var data = $.parseJSON(xhr.responseText);
+							
+							for(var i in data){
+								$('#container_timeline').append(
+									'<div class="publicacao">'+
+										'<img src="http://localhost:3000/img/'+data[i].url_imagem+'"/>' +
+										'<span class="titulo">' + 
+											data[i].titulo +
+										'</span>' +
+										'<div class="comentar">'+
+											'<input type="text" class="form-control input_comentario" placeholder="Adicione um comentario"/>' +
+											'<button class="btn btn-default btn_postagem">Comentar</button>'+
+										'</div>'+
+									'</div>'
+								);
+							}
+						}
+					}
 
+					// Fazer envio do request
+					xhr.open('GET', 'http://localhost:3000/api');
+					xhr.send();
+				}
+				
+				carregaPosts();
 				$('#btn_incluir').click(function(){
 					$('#container_timeline').hide();
 					$('#container_form').show();
@@ -75,6 +106,7 @@
 		<div class="container">
 			<div class="col-md-2"></div>
 			<div class="col-md-8" id="container_timeline"></div>
+			<div class="col-md-2"></div>
 			
 		</div>
 

@@ -82,7 +82,8 @@ app.post('/api' , function(req, res){
  * Retorna TODAS informações do banco de dados
  */
 app.get('/api' , function(req, res){
-    var dados = req.body;
+    // Seta o header para receber requisições de outros domínios
+    res.setHeader('Access-Control-Allow-Origin', '*');
 
     db.open(function(err, mongoClient){
         mongoClient.collection('postagens', function(err, collection){
@@ -188,4 +189,22 @@ app.delete('/api/:id' , function(req, res){
         res.status(400).json({msg: 'Dados inválidos para requisição'});                
     }
     // res.send(dados);
+});
+
+/**
+ * Retorna o registro de acordo com o ID
+ */
+app.get('/img/:img' , function(req, res){
+
+    var img = req.params.img;
+
+    fs.readFile('./uploads/'+img, function(err, content){
+        if(err){
+            res.status(400).json(err);
+            return;
+        }
+
+        res.writeHead(200, {'content-type' : 'image/jpg'});
+        res.end(content);
+    });
 });
