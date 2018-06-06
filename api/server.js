@@ -2,7 +2,7 @@ var express = require('express'),
     bodyParser = require('body-parser'),
     multiParty = require('connect-multiparty'),
     mongodb = require('mongodb'),
-    objectId = require('mongodb').ObjectId,
+    objectId = require('mongodb').ObjectId
     fs = require('fs');
 
 var app = express();
@@ -11,6 +11,17 @@ var app = express();
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 app.use(multiParty());
+
+// Custom Midleware
+app.use(function(req, res, next){
+    // Seta o header para receber requisições de outros domínios
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'content-type');
+    res.setHeader('Access-Control-Allow-Credentials', true);
+
+    next();
+});
 
 var port = 3000;
 
@@ -34,9 +45,6 @@ app.get('/', function(req, res){
  * Cadastra informações no banco de dados
  */
 app.post('/api' , function(req, res){
-    
-    // Seta o header para receber requisições de outros domínios
-    res.setHeader('Access-Control-Allow-Origin', '*');
 
     var date = new Date();
     var timeStamp = date.getTime();
@@ -82,9 +90,6 @@ app.post('/api' , function(req, res){
  * Retorna TODAS informações do banco de dados
  */
 app.get('/api' , function(req, res){
-    // Seta o header para receber requisições de outros domínios
-    res.setHeader('Access-Control-Allow-Origin', '*');
-
     db.open(function(err, mongoClient){
         mongoClient.collection('postagens', function(err, collection){
             collection.find().toArray(function(err, results){
@@ -135,12 +140,24 @@ app.get('/api/:id' , function(req, res){
 app.put('/api/:id' , function(req, res){
     var dados = req.body;
 
-    if(req.params.id != undefined && dados.titulo != undefined){
+    if(req.params.id != undefined){
         db.open(function(err, mongoClient){
             mongoClient.collection('postagens', function(err, collection){
+                if(err){
+                    throw(err);
+                    res.status(500).json(err);
+                    return;
+                }
+                
                 collection.update(
                     { _id : objectId(req.params.id)},
-                    { $set : {titulo: req.body.titulo}},
+                    { $push :   {
+                                    comentarios: {
+                                        id_comentario: new objectId(),
+                                        comentario: dados.comentario
+                                    }
+                                }
+                    },
                     {},
                     function(err, records){
                         if(err){

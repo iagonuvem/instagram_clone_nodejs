@@ -32,13 +32,42 @@
 										'<span class="titulo">' + 
 											data[i].titulo +
 										'</span>' +
+										'<div class="comentarios" id="comentarios_'+data[i]._id+'"></div>'+
 										'<div class="comentar">'+
-											'<input type="text" class="form-control input_comentario" placeholder="Adicione um comentario"/>' +
-											'<button class="btn btn-default btn_postagem">Comentar</button>'+
+											'<input type="text" class="form-control input_comentario" id="'+data[i]._id+'" placeholder="Adicione um comentario"/>' +
+											'<button class="btn btn-default btn_postagem" value="'+data[i]._id+'">Comentar</button>'+
 										'</div>'+
 									'</div>'
 								);
+
+								if(data[i].comentarios != undefined){
+									var comentarios = data[i].comentarios;
+									for(var j in comentarios){
+										$('#comentarios_'+data[i]._id).append(
+											'<div class="txt_comentario">'+
+												'<button type="button" class="btn btn_default btn_remover_postagem" value="'+ comentarios[j].id_comentario+'">X</button>' +
+												comentarios[j].comentario +
+											'</div>'
+										);
+									}
+								}
 							}
+
+							$('.btn_postagem').click(function(){
+								var id = this.value;
+								var comentario = $('#'+id).val();
+
+								var xhr = new XMLHttpRequest();
+								xhr.open('PUT' , 'http://localhost:3000/api/'+id);
+								xhr.setRequestHeader('Content-Type', 'application/json');
+
+								xhr.onload = function(){
+									if(xhr.status === 200){
+										window.location.href = '/home';
+									}
+								}
+								xhr.send(JSON.stringify({comentario: comentario}));
+							});
 						}
 					}
 
