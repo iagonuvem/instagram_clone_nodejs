@@ -182,24 +182,32 @@ app.put('/api/:id' , function(req, res){
  * Realiza o delete no banco de dados
  */
 app.delete('/api/:id' , function(req, res){
-    var dados = req.body;
+    var id = req.params.id;
 
-    if(req.params.id != undefined){
+    if(id != undefined){
         db.open(function(err, mongoClient){
             mongoClient.collection('postagens', function(err, collection){
-                collection.remove({_id: objectId(req.params.id)}, function(err, records){
-                    if(err){
-                        res.status(500).json(err);
-                    } else {
-                        if(records.result.n != 0){
-                            res.status(200).json(records);
+                collection.update(
+                    {}, 
+                    {
+                        $pull:  {
+                                    comentarios: {id_comentario: objectId(id)}
+                                }
+                    },
+                    {multi: true},
+                    function(err, records){
+                        if(err){
+                            res.status(500).json(err);
                         } else {
-                            res.status(500).json({msg: 'Nenhum documento foi deletado!'});
+                            if(records.result.n != 0){
+                                res.status(200).json(records);
+                            } else {
+                                res.status(500).json({msg: 'Nenhum documento foi deletado!'});
+                            }
                         }
+                        mongoClient.close();
                     }
-                    mongoClient.close();
-                });
-                
+                );   
             });
         });
     } else {
